@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.jeecg.modules.psms.supervision.mapper.SupervisionMapper">
+
+    <!-- 根据 餐饮企业id和起止时间 获取开关机次数 -->
+    <select id="stopMac" resultType="java.util.Map" >
+        SELECT
+            count(BPL.point_mac) as num,
+            BPL.point_mac as mac
+        FROM base_point_log BPL
+        RIGHT JOIN base_point BP ON
+            BP.point_mac = BPL.point_mac and BP.company_id = #{id}
+        WHERE 1=1
+            and date_format(BPL.time,'%Y-%m-%d %H:%i') &gt; #{startTime}
+            and date_format(BPL.time,'%Y-%m-%d %H:%i') &lt; #{endTime}
+            and BPL.is_on = 0
+        GROUP BY BPL.point_mac
+    </select>
+
+    <!-- 根据餐饮企业id和日期 获取油烟表条目数 -->
+    <select id="getLampblackCount" resultType="java.util.Map" >
+        SELECT
+            round((count(if(BLD.fan_status = 1, 1, null))/60),0) as fan,
+	        round((count(if(BLD.purifier_status = 1, 1, null))/60),0) as purifier,
+            BLD.point_mac as mac
+        FROM ${tableLampblack} BLD
+        RIGHT JOIN base_point BP ON
+            BLD.point_mac = BP.point_mac and BP.company_id = #{companyId}
+        WHERE BLD.yyyymmdd = #{format}
+
+    </select>
+
+    <!-- 根据餐饮企业id和日期 获取净化器条目数-->
+    <select id="getPurifierCount" resultType="int" >
+        SELECT
+            count(BPP.id)
+        FROM ${tablePurifier} BPP
+        WHERE
+            BPP.bu_lampblack_id in(
+                SELECT
+                BLD.id
+                FROM ${tableLampblack} BLD
+                RIGHT JOIN base_point BP ON BLD.point_mac = BP.point_mac and BP.company_id = #{companyId}
+                WHERE BLD.yyyymmdd = #{format}
+            )
+    </select>
+
+    <!-- 根据餐饮企业id和日期  获取净化器 二次电压字段小于10的条目数 -->
+    <select id="secondaryVoltage" resultType="java.util.Map" >
+        SELECT
+            count(BPP.id) as num,
+            BPP.point_mac as mac
+        FROM ${tablePurifier} BPP
+        WHERE BPP.bu_lampblack_id in(
+                SELECT
+                BLD.id
+                FROM ${tableLampblack} BLD
+                RIGHT JOIN base_point BP ON BLD.point_mac = BP.point_mac and BP.company_id = #{companyId}
+                WHERE BLD.yyyymmdd = #{format}
+            )
+            and BPP.second_voltage is not null
+            and BPP.second_voltage &lt; 10
+    </select>
+
+    <!-- 根据日期和mac集合 查询出开关机表数据 -->
+    <select id="getPointLog" resultType="java.util.Map" >
+        SELECT *
+        FROM base_point_log l
+        WHERE date_format(l.time,'%Y-%m-%d') = #{format}
+        <if test="macs!=null and macs.size()>0">
+            and l.point_mac in
+            <foreach collection="macs" item="item"
+                     index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+        ORDER BY l.time DESC
+    </select>
+
+    <!-- 根据餐饮企业id和起止时间 获取油烟表条目数 -->
+    <select id="getNetwork" resultType="int" >
+        SELECT
+            IFNULL(count(BLD.id),0) as num
+        FROM ${tableLampblack} BLD
+        RIGHT JOIN base_point BP ON BLD.point_mac = BP.point_mac and BP.company_id = #{companyId}
+        WHERE BLD.yyyymmdd = #{format}
+    </select>
+
+    <!-- 根据餐饮企业id和日期查询 超标的条目数 -->
+    <select id="smokeCount" resultType="java.util.Map" >
+        SELECT
+            IFNULL(SUM(BLD.lampblack_data > 1 or BLD.matter_data >5 or BLD.nmhc_data > 10),0) as num,
+            BLD.point_mac as mac
+        FROM ${tableLampblack} BLD
+        RIGHT JOIN base_point BP ON BLD.point_mac = BP.point_mac and BP.company_id = #{companyId}
+        WHERE BLD.yyyymmdd = #{format}
+    </select>
+
+    <!-- 根据餐饮企业id和日期查询 超标的条目数 -->
+    <select id="highVoltage" resultType="java.util.Map" >
+        SELECT
+            IFNULL(SUM(
+                BPP.output_power = 0
+                and BPP.power_open_status = 0
+                and BPP.power_protect_status = 10
+                and BPP.power_circuit_protect = 0
+                and BPP.power_overtemp_protect = 0 ),0) as num,
+            BPP.point_mac as mac
+        FROM ${tablePurifier} BPP
+        WHERE
+            BPP.bu_lampblack_id in(
+                SELECT
+                BLD.id
+                FROM ${tableLampblack} BLD
+                RIGHT JOIN base_point BP ON
+                BLD.point_mac = BP.point_mac and BP.company_id = #{companyId}
+                WHERE BLD.yyyymmdd = #{format}
+            )
+    </select>
+
+    <!-- 根据日期查询 警告类型条目数  -->
+    <select id="getLabel" resultType="java.util.Map" >
+        SELECT
+            IFNULL(COUNT(CASE alarm_type WHEN 1 THEN 0 END),0) as a1,
+            IFNULL(COUNT(CASE alarm_type WHEN 2 THEN 0 END),0) as a2,
+            IFNULL(COUNT(CASE alarm_type WHEN 3 THEN 0 END),0) as a3,
+            IFNULL(COUNT(CASE alarm_type WHEN 4 THEN 0 END),0) as a4,
+            IFNULL(COUNT(CASE alarm_type WHEN 5 THEN 0 END),0) as a5,
+            IFNULL(COUNT(CASE alarm_type WHEN 6 THEN 0 END),0) as a6,
+            IFNULL(COUNT(CASE alarm_type WHEN 7 THEN 0 END),0) as a7,
+            IFNULL(COUNT(CASE alarm_type WHEN 8 THEN 0 END),0) as a8
+        FROM base_company_type
+        WHERE amount>50
+            and fid_region = #{fidRegion}
+            and is_on = 0
+        <if test="format != null and format != ''">
+            and DATE_FORMAT(create_time, '%Y-%m-%d') = #{format}
+        </if>
+    </select>
+
+    <!-- 根据日期和is_on（0=统计 1=排除） 进行查询高中低风险  -->
+    <select id="getRiskCount" resultType="java.util.Map" >
+        SELECT
+            IFNULL(SUM(sub.num &gt; 20),0) as a1,
+            IFNULL(SUM(sub.num &lt; 20 and sub.num &gt; 10),0) as a2,
+            IFNULL(SUM(sub.num &lt; 10),0) as a3
+        FROM (
+            SELECT SUM(b.alarm_type &gt; 0) as num
+            FROM base_company_type b
+            WHERE   1=1
+                <if test="format != null and format != ''">
+                    and date_format(b.create_time,'%Y-%m') = #{format}
+                </if>
+                <if test="i != null ">
+                    and b.is_on = #{i}
+                </if>
+                    and b.fid_region= #{fidRegion}
+
+            GROUP BY b.name
+        ) sub
+    </select>
+
+    <!-- 根据日期和is_on（0=统计 1=排除） 查询标签企业数量 -->
+    <select id="getRiskVCount" resultType="int" >
+        SELECT IFNULL(count(num),0) as n
+        FROM (
+            SELECT count(b.id) as num
+            FROM base_company_type b
+            WHERE   1=1
+                <if test="format != null and format != ''">
+                    and date_format(b.create_time,'%Y-%m') = #{format}
+                </if>
+
+                <if test="i != null ">
+                    and b.is_on = #{i}
+                </if>
+                and b.fid_region= #{fidRegion}
+            GROUP BY b.name
+        ) sub
+    </select>
+
+    <!-- 根据日期 查询出警告企业列表内容 SUM(b.alarm_type &gt; 0) as num-->
+    <select id="getNewRisk" resultType="java.util.Map" >
+        SELECT
+            b.id as id,
+            b.name,
+            count(b.name) as num,
+            date_format(now(),'%Y-%m-%d') as time
+        FROM base_company_type b
+        WHERE 1=1
+            and date_format(b.create_time,'%Y-%m') = #{format}
+            and b.is_on = 0
+            and b.fid_region = #{fidRegion}
+        GROUP BY b.name
+        ORDER BY b.id ASC
+    </select>
+
+    <!-- 根据餐饮企业名称 解除某个月的警告状态 -->
+    <select id="getClearRisk" resultType="java.util.Map" >
+        UPDATE base_company_type b SET b.is_on = 1, b.updata_time = now()
+        WHERE 1=1
+            and b.name = #{name}
+            and date_format(b.create_time,'%Y-%m') = #{format}
+            and b.fid_region = #{fidRegion}
+    </select>
+
+    <!--  根据日期查询出 接触风险企业  SUM(b.alarm_type &gt; 0) as num-->
+    <select id="getClearRiskList" resultType="java.util.Map" >
+        SELECT
+            b.id as id,
+            b.name,
+            count(b.name) as num,
+            date_format(now(),'%Y-%m-%d') as time,
+            date_format(b.updata_time,'%Y-%m-%d %H:%i:%S') as clearTime
+        FROM base_company_type b
+        WHERE 1=1
+            and date_format(b.create_time,'%Y-%m') = #{format}
+            and b.fid_region = #{fidRegion}
+            and b.is_on = 1
+        GROUP BY b.name
+        ORDER BY b.id ASC
+    </select>
+
+    <!-- 根据餐饮企业id和时间区间 解除警告状态 -->
+    <select id="updateAlarm" resultType="java.util.Map" >
+        UPDATE base_company_type b SET b.is_on = 1, b.updata_time = now()
+        WHERE 1=1
+        and b.id = #{companyId}
+        <if test="startTime != null and startTime != ''">
+            AND date_format(BLD.create_time,'%Y-%m-%d %H:%i:%S') &gt; #{startTime}
+        </if>
+        <if test="endTime != null and endTime != ''">
+            AND date_format(BLD.create_time,'%Y-%m-%d %H:%i:%S') &lt; #{endTime}
+        </if>
+
+    </select>
+
+</mapper>

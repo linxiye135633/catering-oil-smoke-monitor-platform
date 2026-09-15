@@ -1,0 +1,424 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.jeecg.modules.psms.base.mapper.PsmsMapper">
+    <select id="getTestAllData" resultType="java.util.Map" >
+        SELECT
+            BC.id,
+            BC.name,
+            BC.manufacturer_code as manufacturerCode,
+            BC.address,
+            CONCAT(BC.area_code,BC.street_code) as areaStreet,
+            BC.contact as contact,
+            BC.contact_mobile as contactMobile,
+            BC.stove_number as stoveNumber,
+            BP.conn_date as connDate,
+            BP.port_name as portName,
+            BP.name as pointName,
+            BP.point_mac as pointMac,
+            BP.status as status,
+            BP.air_volume as airVolume,
+            BP.tech_roadmap as techRoadmap,
+            BPP.second_voltage as secondVoltage,
+            BPP.second_current as secondCurrent,
+            BLD.lampblack_data as lampblackData,
+            BLD.matter_data as matterData,
+            BLD.nmhc_data as nmhcData,
+            BLD.purifier_status as purifierStatus,
+            BLD.purifier_voltage_diff as purifierVoltageDiff,
+            BLD.fan_status as fanStatus,
+            BLD.fan_current as fanCurrent,
+            date_format(BLD.create_time,'%Y-%m-%d %H:%i:%S') as createTime
+        FROM base_company BC
+            LEFT JOIN base_point BP ON BP.company_id = BC.id
+            LEFT JOIN ${tableLampblack} BLD ON BLD.point_mac = BP.point_mac
+            LEFT JOIN ${tablePurifier} BPP ON BPP.bu_lampblack_id = BLD.id
+        where 1=1
+        <if test="companyid !=null and companyid != ''">
+            AND BC.id = #{companyid,jdbcType=VARCHAR}
+        </if>
+        <if test="pointid !=null and pointid != ''">
+            AND BP.point_mac = #{pointid,jdbcType=VARCHAR}
+        </if>
+
+        <if test="startTime != null and startTime != ''">
+            AND date_format(BLD.create_time,'%Y-%m-%d %H:%i:%S') &gt; #{startTime}
+        </if>
+        <if test="endTime != null and endTime != ''">
+            AND date_format(BLD.create_time,'%Y-%m-%d %H:%i:%S') &lt; #{endTime}
+        </if>
+
+        <if test="fidRegion !=null">
+            AND BC.fid_region = #{fidRegion}
+        </if>
+        order by BLD.create_time desc
+    </select>
+
+
+    <select id="getNewestCreateTime" resultType="java.util.Map" ><!-- parameterType="list"-->
+        SELECT
+            BC.id,
+            BC.name,
+            BC.manufacturer_code as manufacturerCode,
+            BC.address,
+            CONCAT(BC.area_code,BC.street_code) as areaStreet,
+            BC.contact as contact,
+            BC.contact_mobile as contactMobile,
+            BC.stove_number as stoveNumber,
+            BP.conn_date as connDate,
+            BP.port_name as portName,
+            BP.name as pointName,
+            BP.point_mac as pointMac,
+            BP.status as status,
+            BP.air_volume as airVolume,
+            BP.tech_roadmap as techRoadmap,
+            BPP.second_voltage as secondVoltage,
+            BPP.second_current as secondCurrent,
+            BLD.lampblack_data as lampblackData,
+            BLD.matter_data as matterData,
+            BLD.nmhc_data as nmhcData,
+            BLD.purifier_status as purifierStatus,
+            BLD.purifier_voltage_diff as purifierVoltageDiff,
+            BLD.fan_status as fanStatus,
+            BLD.fan_current as fanCurrent,
+            date_format(BLD.create_time,'%Y-%m-%d %H:%i:%S') as createTime
+        FROM base_company BC
+             LEFT JOIN base_point BP ON BP.company_id = BC.id
+             LEFT JOIN ${tableLampblack}  BLD ON BLD.point_mac = BP.point_mac
+             LEFT JOIN ${tablePurifier} BPP ON BPP.bu_lampblack_id = BLD.id
+        WHERE BLD.create_time IN
+             (SELECT MAX(BLDS.create_time)
+             FROM ${tableLampblack}  BLDS
+                 RIGHT JOIN base_point BPS ON BLDS.point_mac = BPS.point_mac
+                 RIGHT JOIN base_company BCS ON BPS.company_id = BCS.id
+            where   1=1
+                <if test='hour != null and hour == "1"'>
+                    AND BLDS.create_time between date_add(now(), interval -1 hour) and now()
+                </if>
+                <if test='hour != null and hour == "2"'>
+                    AND BLDS.create_time between date_add(now(), interval -2 hour) and date_add(now(), interval  -1 hour)
+                </if>
+                <if test='hour != null and hour == "3"'>
+                    AND BLDS.create_time between date_add(now(), interval -3 hour) and date_add(now(), interval  -2 hour)
+                </if>
+                <if test="startTime != null and startTime != ''">
+                    AND date_format(BLD.create_time,'%Y-%m-%d %H:%i:%S') &gt; #{startTime}
+                </if>
+                <if test="endTime != null and endTime != ''">
+                    AND date_format(BLD.create_time,'%Y-%m-%d %H:%i:%S') &lt; #{endTime}
+                </if>
+             group by BLDS.point_mac
+             order by BLDS.create_time desc)
+
+        <if test="ids!=null and ids.size()>0">
+            AND BC.id in
+            <foreach collection="ids" item="item"
+                     index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+
+        <if test="fidRegion !=null">
+            AND BP.fid_region = #{fidRegion}
+        </if>
+
+        <if test="pointMac !=null and pointMac != ''">
+            AND BP.point_mac = #{pointMac,jdbcType=VARCHAR}
+        </if>
+
+        group by BP.point_mac
+        order by BLD.create_time desc
+    </select>
+
+    <select id="getNewestCreateTime2" resultType="java.util.Map" >
+        SELECT
+        BC.id,
+        BC.name,
+        BC.manufacturer_code as manufacturerCode,
+        BC.address,
+        CONCAT(BC.area_code,BC.street_code) as areaStreet,
+        BC.contact as contact,
+        BC.contact_mobile as contactMobile,
+        BC.stove_number as stoveNumber,
+        BP.conn_date as connDate,
+        BP.port_name as portName,
+        BP.name as pointName,
+        BP.point_mac as pointMac,
+        BP.status as status,
+        BP.air_volume as airVolume,
+        BP.tech_roadmap as techRoadmap,
+        BPP.second_voltage as secondVoltage,
+        BPP.second_current as secondCurrent,
+        BLD.lampblack_data as lampblackData,
+        BLD.matter_data as matterData,
+        BLD.nmhc_data as nmhcData,
+        BLD.purifier_status as purifierStatus,
+        BLD.purifier_voltage_diff as purifierVoltageDiff,
+        BLD.fan_status as fanStatus,
+        BLD.fan_current as fanCurrent,
+        date_format(BLD.create_time,'%Y-%m-%d %H:%i:%S') as createTime
+        FROM base_company BC
+        LEFT JOIN base_point BP ON BP.company_id = BC.id
+        LEFT JOIN ${tableLampblack}  BLD ON BLD.point_mac = BP.point_mac
+        LEFT JOIN ${tablePurifier} BPP ON BPP.bu_lampblack_id = BLD.id
+        WHERE 1=1
+
+        <if test="ids!=null and ids.size()>0">
+            AND BC.id in
+            <foreach collection="ids" item="item"
+                     index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+
+        <if test="fidRegion !=null">
+            AND BP.fid_region = #{fidRegion}
+        </if>
+
+        <if test="pointMac !=null and pointMac != ''">
+            AND BP.point_mac = #{pointMac,jdbcType=VARCHAR}
+        </if>
+        group by BP.point_mac
+        order by BLD.create_time desc
+    </select>
+
+    <select id="getNowTimeDataForMac" resultType="java.util.Map" ><!-- parameterType="list"-->
+        SELECT
+            BC.id,
+            BC.name,
+            date_format(BLD.create_time,'%Y-%m-%d %H:%i:%S') as createTime,
+            BC.manufacturer_code as manufacturerCode,
+            BC.address,
+            CONCAT(BC.area_code,BC.street_code) as areaStreet,
+            BC.contact as contact,
+            BC.contact_mobile as contactMobile,
+            BC.stove_number as stoveNumber,
+            BP.conn_date as connDate,
+            BP.port_name as portName,
+            BP.name as pointName,
+            BP.point_mac as pointMac,
+            BP.status as status,
+            BP.air_volume as airVolume,
+            BP.tech_roadmap as techRoadmap,
+            BPP.second_voltage as secondVoltage,
+            BPP.second_current as secondCurrent,
+            BLD.lampblack_data as lampblackData,
+            BLD.matter_data as matterData,
+            BLD.nmhc_data as nmhcData,
+            BLD.purifier_status as purifierStatus,
+            BLD.purifier_voltage_diff as purifierVoltageDiff,
+            BLD.fan_status as fanStatus,
+            BLD.fan_current as fanCurrent
+        FROM base_company BC
+        LEFT JOIN base_point BP ON BP.company_id = BC.id
+        LEFT JOIN ${tableLampblack}   BLD ON BLD.point_mac = BP.point_mac
+        LEFT JOIN ${tablePurifier} BPP ON BPP.bu_lampblack_id = BLD.id
+        WHERE 1=1
+            <if test="fidRegion !=null">
+                AND BP.fid_region = #{fidRegion}
+            </if>
+            AND BP.point_mac = #{pointMac,jdbcType=VARCHAR}
+        order by BLD.create_time desc
+    </select>
+
+    <select id="getStatByCreateTime" resultType="java.util.Map" >
+        SELECT
+        FLOOR((TIMESTAMPDIFF(SECOND,create_time, #{createTime}) - 1)/3600) AS section,
+        COUNT(1),
+        create_time,
+        <!--SUM(lampblack_data>5),-->
+        MAX(lampblack_data) as lampblackDataMax,
+        CAST(AVG(lampblack_data) AS DECIMAL(10,3))as lampblackDataAvg,
+
+        MAX(matter_data) as matterDataMax,
+        CAST(AVG(matter_data) AS DECIMAL(10,3))as matterDataAvg,
+
+        MAX(nmhc_data) as nmhcDataMax,
+        CAST(AVG(nmhc_data) AS DECIMAL(10,3))as nmhcDataAvg
+
+        FROM
+            ${table}
+        WHERE
+            point_mac = #{pointMac}
+        <if test="createTime != null and createTime != ''">
+            AND date_format(create_time,'%Y-%m-%d') >= DATE_SUB(#{createTime},INTERVAL 1 DAY)
+            AND date_format(create_time,'%Y-%m-%d') &lt; #{createTime}
+        </if>
+
+        GROUP BY section
+    </select>
+
+    <select id="getDetailsByTime" resultType="java.util.Map" >
+
+        SELECT
+            IFNULL(SUM(BLD.lampblack_data &gt; 1),0) as a1,
+            IFNULL(SUM(BLD.matter_data &gt; 5),0) as a2,
+            IFNULL(SUM(BLD.nmhc_data &gt; 10),0) as a3,
+            IFNULL(SUM(BLD.lampblack_data = 0 or BLD.matter_data = 0 or BLD.nmhc_data = 0),0) as a4,
+            (SELECT IFNULL(SUM(lg.is_on = 0),0) FROM base_point_log lg
+        where
+            1=1
+            <if test='hour != null and hour == "1"'>
+                and lg.time between date_add(now(), interval -1 hour) and now()
+            </if>
+            <if test='hour != null and hour == "2"'>
+                and lg.time between date_add(now(), interval -2 hour) and date_add(now(), interval  -1 hour)
+            </if>
+            <if test='hour != null and hour == "3"'>
+                and lg.time between date_add(now(), interval -3 hour) and date_add(now(), interval  -2 hour)
+            </if>
+        ) as a5
+
+        FROM ${tableLampblack}  BLD
+        where
+             1=1
+        <if test='hour != null and hour == "1"'>
+            and BLD.create_time between date_add(now(), interval -1 hour) and now()
+        </if>
+        <if test='hour != null and hour == "2"'>
+            and BLD.create_time between date_add(now(), interval -2 hour) and date_add(now(), interval  -1 hour)
+        </if>
+        <if test='hour != null and hour == "3"'>
+            and BLD.create_time between date_add(now(), interval -3 hour) and date_add(now(), interval  -2 hour)
+        </if>
+
+        and
+        BLD.point_mac = #{ids}
+    </select>
+
+
+    <select id="getWarnEvent1" resultType="java.util.Map" >
+        SELECT
+        FLOOR((TIMESTAMPDIFF(SECOND,create_time, #{createTime}) - 1)/1800) AS section,
+            COUNT(1),
+            MAX(lampblack_data) as lampblackDataMax,
+            MAX(matter_data) as matterData,
+            MAX(nmhc_data) as nmhcData,
+            create_time,
+            IFNULL(SUM(lampblack_data > 1 or matter_data > 5 or nmhc_data > 10),0) as a1,
+            IFNULL(SUM(lampblack_data=0 and matter_data=0 and nmhc_data=0),0) as a2
+        FROM
+            ${tableLampblack}
+        WHERE
+            1=1
+            <if test="createTime != null and createTime != ''">
+                AND date_format(create_time,'%Y-%m-%d') >= DATE_SUB(#{createTime},INTERVAL 1 DAY)
+                AND date_format(create_time,'%Y-%m-%d') &lt; #{createTime}
+            </if>
+            and point_mac in(
+                SELECT point_mac FROM base_point BP,base_company BC
+                WHERE BP.company_id = BC.id
+                <if test="id !=null and id != ''">
+                    AND BC.id = #{id,jdbcType=VARCHAR}
+                </if>
+                <if test="pointId !=null and pointId != ''">
+                    AND BP.point_mac = #{pointId,jdbcType=VARCHAR}
+                </if>
+            )
+        GROUP BY section
+
+    </select>
+
+    <select id="getWarnEvent4" resultType="java.util.Map" >
+        select date_format(create_time,'%Y-%m-%d') as mTime
+        from ${tableLampblack}
+        WHERE 1=1
+            and point_mac in(
+                SELECT point_mac FROM base_point BP,base_company BC
+                WHERE BP.company_id = BC.id
+                <if test="id !=null and id != ''">
+                    AND BC.id = #{id,jdbcType=VARCHAR}
+                </if>
+                <if test="pointId !=null and pointId != ''">
+                    AND BP.point_mac = #{pointId,jdbcType=VARCHAR}
+                </if>
+            )
+    </select>
+
+    <select id="getWarnEvent3" resultType="java.util.Map" >
+        SELECT BC.name as name,BP.point_mac as mac
+        FROM base_company BC,base_point BP
+        WHERE BC.id = BP.company_id
+        and BC.fid_region = #{fidRegion}
+        <if test="id !=null and id != ''">
+            AND BC.id = #{id,jdbcType=VARCHAR}
+        </if>
+        <if test="pointId !=null and pointId != ''">
+            AND BP.point_mac = #{pointId,jdbcType=VARCHAR}
+        </if>
+    </select>
+
+
+    <select id="statCompanyExcessive" resultType="java.util.Map" >
+
+        SELECT
+            IFNULL(count(1),0) as a2,
+            (SELECT IFNULL(count(1),0) FROM base_company WHERE fid_region = #{fidRegion}) as a1
+        FROM base_company BC
+        WHERE
+            BC.id in(
+                SELECT BP.company_id
+                FROM base_point BP,${tableLampblack} BLD
+                WHERE 1=1
+                and BP.point_mac = BLD.point_mac
+                and BP.fid_region = #{fidRegion}
+                and (BLD.lampblack_data > 1 or BLD.matter_data > 5 or BLD.nmhc_data > 10)
+            )
+            and BC.fid_region = #{fidRegion}
+
+    </select>
+
+    <select id="statPointExcessive" resultType="java.util.Map" >
+
+        SELECT IFNULL(count(1),0) as a2,
+        (SELECT IFNULL(count(1),0) FROM base_point WHERE fid_region =  #{fidRegion}) as a1
+        FROM base_point BP
+        WHERE
+            BP.point_mac in(
+                SELECT BLD.point_mac
+                FROM ${tableLampblack} BLD
+                WHERE 1=1
+                and (BLD.lampblack_data > 1 or BLD.matter_data > 5 or BLD.nmhc_data > 10)
+            )
+            and BP.fid_region =  #{fidRegion}
+    </select>
+
+
+    <select id="getOverproof" resultType="java.util.Map" >
+        SELECT
+            IFNULL(SUM(sub.num=0),0) AS overproof
+        FROM(
+            SELECT
+                IFNULL(SUM(BLD.lampblack_data > 1 or BLD.matter_data > 5 or BLD.nmhc_data > 10),0) as num,
+                BP.point_mac as mac
+            FROM ${tableLampblack} BLD
+            RIGHT JOIN base_point BP ON BLD.point_mac = BP.point_mac and BP.fid_region = #{fidRegion}
+            WHERE BLD.create_time is not null
+            and BLD.yyyymmdd = #{formatDay}
+            GROUP BY BP.point_mac
+        ) sub
+    </select>
+    <!--
+        and date_format(BLD.create_time,'%Y-%m-%d') = date_format(DATE_SUB(now(),INTERVAL 1 DAY),'%Y-%m-%d')
+        and date_format(BLD.create_time,'%Y-%m-%d') = date_format(DATE_SUB(now(),INTERVAL 1 DAY),'%Y-%m-%d')
+    -->
+    <select id="getOnlineNum" resultType="java.util.Map" >
+        SELECT
+            count(sub.num) as total,
+            SUM(sub.num=0) as offlineNum,
+            (count(sub.num) - SUM(sub.num=0))	as	onlineNum
+        FROM(
+            SELECT
+                (
+                    SELECT count(BLD.id)
+                    FROM ${tableLampblack} BLD
+                    WHERE BLD.point_mac = BP.point_mac
+                    and BLD.yyyymmdd = #{formatDay}
+                )as num,
+                BP.point_mac
+            FROM base_point BP
+            WHERE BP.fid_region = #{fidRegion}
+        ) sub
+    </select>
+
+</mapper>
+

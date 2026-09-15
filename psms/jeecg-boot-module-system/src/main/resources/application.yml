@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: jeecg-system
+  profiles:
+    active: dev
+  main:
+    # Spring Boot 2.6+ 默认禁止循环依赖，老框架存量代码存在少量循环引用，放行
+    allow-circular-references: true
+  mvc:
+    # springfox/knife4j 2.x 需要 Ant 风格路径匹配（Spring Boot 2.6+ 默认改为 PathPattern）
+    pathmatch:
+      matching-strategy: ant_path_matcher

@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.jeecg.modules.psms.home.mapper.HomeMapper">
+
+    <select id="statCompany" resultType="java.util.Map">
+        SELECT
+        (SELECT count(id) FROM base_company WHERE
+        date_format(create_time,'%Y-%m') = date_format(now(),'%Y-%m')
+        <if test="fidRegion !=null">
+            AND fid_region = #{fidRegion}
+        </if>
+        ) as monthNum,
+        count(id) as total
+        FROM base_company
+        where create_time is not null
+        <if test="fidRegion !=null">
+            AND fid_region = #{fidRegion}
+        </if>
+    </select>
+
+    <select id="pointCompany" resultType="java.util.Map">
+        SELECT
+        (SELECT count(id) FROM base_point WHERE
+        date_format(create_time,'%Y-%m') = date_format(now(),'%Y-%m')
+        <if test="fidRegion !=null">
+            AND fid_region = #{fidRegion}
+        </if>
+        ) as monthNum,
+        count(id) as total
+        FROM base_point
+        where create_time is not null
+        <if test="fidRegion !=null">
+            AND fid_region = #{fidRegion}
+        </if>
+    </select>
+
+    <!--statementType="STATEMENT"-->
+    <select id="lampblackRateFlow" resultType="java.util.Map" >
+        SELECT
+        (SELECT count(id) FROM ${table} t WHERE date_format(t.create_time,'%Y-%m') = date_format(now(),'%Y-%m')) as monthNum,
+        count(p.id) as total
+        FROM ${table} p
+        where p.create_time is not null
+    </select>
+
+    <select id="pointRateFlow" resultType="java.util.Map">
+        SELECT
+            (SELECT count(1) FROM base_point
+                <if test="fidRegion !=null">
+                    WHERE fid_region = #{fidRegion}
+                </if>
+            ) as total,
+            COUNT(sub.mac) as onlineTime,
+            ((SELECT count(1) FROM base_point
+                <if test="fidRegion !=null">
+                    WHERE fid_region = #{fidRegion}
+                </if>
+            ) - COUNT(sub.mac))offline
+        FROM(
+            SELECT BP.point_mac as mac
+            FROM base_point BP
+            INNER JOIN ${table} BLD on BLD.point_mac = BP.point_mac
+            WHERE 1=1
+                <if test="fidRegion !=null">
+                    and BP.fid_region = #{fidRegion}
+                </if>
+                and BLD.create_time between date_add(now(), interval  #{hours}  hour) and now()
+            GROUP BY BP.point_mac
+        ) sub
+    </select>
+
+    <select id="companyCount" resultType="int" >
+        SELECT count(1) FROM base_company BC
+        WHERE BC.id in(SELECT company_id FROM base_point GROUP BY company_id)
+        <if test="monthv !=null and monthv != ''">
+            AND date_format(BC.create_time,'%Y-%m') = date_format(now(),'%Y-%m')
+        </if>
+
+        <if test="fidRegion !=null">
+            AND BC.fid_region = #{fidRegion}
+        </if>
+    </select>
+
+    <select id="getElectric" resultType="int" >
+        select
+        IFNULL(SUM(model_number),0) as num
+        from base_point
+        <if test="fidRegion !=null">
+            WHERE fid_region = #{fidRegion}
+        </if>
+    </select>
+
+    <select id="getBusinessCategory" resultType="java.util.Map" >
+        SELECT
+        <!--(select COUNT(id)) as total,-->
+        (SELECT COUNT(CASE business_category WHEN 1 THEN 0 END)) as A类,
+        (SELECT COUNT(CASE business_category WHEN 2 THEN 0 END)) as B类,
+        (SELECT COUNT(CASE business_category WHEN 3 THEN 0 END)) as C类,
+        (SELECT COUNT(CASE business_category WHEN 4 THEN 0 END)) as D类,
+        (SELECT COUNT(CASE business_category WHEN 5 THEN 0 END)) as E类
+        FROM base_company
+        <if test="fidRegion !=null">
+            WHERE fid_region = #{fidRegion}
+        </if>
+    </select>
+
+    <select id="getUnitCategory" resultType="java.util.Map" >
+        SELECT
+        <!--(select COUNT(id)) as total,-->
+        (SELECT COUNT(CASE unit_category WHEN 1 THEN 0 END)) as 餐饮经营单位,
+        (SELECT COUNT(CASE unit_category WHEN 2 THEN 0 END)) as 单位食堂,
+        (SELECT COUNT(CASE unit_category WHEN 3 THEN 0 END)) as 中央厨房,
+        (SELECT COUNT(CASE unit_category WHEN 4 THEN 0 END)) as 集体用餐配送单位
+        FROM base_company
+        <if test="fidRegion !=null">
+            WHERE fid_region = #{fidRegion}
+        </if>
+    </select>
+
+</mapper>

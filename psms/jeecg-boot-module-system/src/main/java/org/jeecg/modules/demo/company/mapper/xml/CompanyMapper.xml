@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.jeecg.modules.demo.company.mapper.CompanyMapper">
+
+    <select id="queryList" resultType="java.util.Map" >
+        SELECT
+        BP.id as pointid, BC.*,BP.*,bld.create_time as mTime
+        FROM base_company BC
+        LEFT JOIN base_point BP ON BP.company_id = BC.id
+        LEFT JOIN bu_lampblack_data_131000_now bld on BP.point_mac = bld.point_mac
+        where 1=1
+            <if test="ids!=null and ids.size()>0">
+                AND BC.id in
+                <foreach collection="ids" item="item"
+                         index="index" open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="fidRegion !=null">
+                AND BP.fid_region = #{fidRegion}
+            </if>
+        order by BC.id desc
+    </select>
+
+    <select id="queryLists" resultType="java.util.Map" >
+        SELECT
+        BP.id as pointid, BC.*,BP.*,bld.create_time as mTime
+        FROM base_company BC
+        LEFT JOIN base_point BP ON BP.company_id = BC.id
+        LEFT JOIN bu_lampblack_data_131000_now bld on BP.point_mac = bld.point_mac
+        where 1=1
+            <if test="ids!=null and ids.size()>0">
+                AND BC.id in
+                <foreach collection="ids" item="item"
+                         index="index" open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="fidRegion !=null">
+                AND BP.fid_region = #{fidRegion}
+            </if>
+        order by BC.id desc
+    </select>
+</mapper>

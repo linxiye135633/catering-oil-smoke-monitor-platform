@@ -1,0 +1,140 @@
+<template>
+  <a-card :bordered="false">
+    <!-- 查询区域 -->
+    <div class="table-page-search-wrapper">
+      <a-form layout="inline" @keyup.enter.native="searchQuery">
+        <a-row :gutter="24">
+          <a-col :xl="5" :lg="7" :md="8" :sm="24">
+            <a-form-item>
+              <a-input placeholder="单位/标题/联系人/手机/测点MAC" v-model="queryParam.realname"></a-input>
+            </a-form-item>
+          </a-col>
+          <a-col :xl="4" :lg="7" :md="8" :sm="24">
+            <a-form-item>
+              <a-select v-model="queryParam.comStatus" placeholder="请选择状态">
+                <a-select-option value="1"> 全部状态 </a-select-option>
+                <a-select-option value="2"> 有效 </a-select-option>
+                <a-select-option value="3"> 无效 </a-select-option>
+              </a-select>
+            </a-form-item>
+          </a-col>
+          <a-col :xl="12" :lg="12" :md="12" :sm="24">
+            <span style="float: left; overflow: hidden" class="table-page-search-submitButtons">
+              <a-button type="primary" @click="searchQuery" icon="search">查询</a-button>
+            </span>
+          </a-col>
+        </a-row>
+      </a-form>
+    </div>
+    <!-- 查询区域-END -->
+
+    <!-- table区域-begin -->
+    <div>
+      <a-table
+        ref="table"
+        size="middle"
+        bordered
+        rowKey="id"
+        :columns="columns"
+        :dataSource="dataSource"
+        :pagination="ipagination"
+        :loading="loading"
+        class="j-table-force-nowrap"
+        @change="handleTableChange"
+      >
+        <template slot="htmlSlot" slot-scope="text">
+          <div v-html="text"></div>
+        </template>
+        <span slot="tags" slot-scope="tags">
+          <a-tag color="geekblue">
+            {{ tags }}
+          </a-tag>
+        </span>
+        <span slot="action" slot-scope="text, record">
+          <a @click="edit(record)">指标</a>
+        </span>
+      </a-table>
+    </div>
+  </a-card>
+</template>
+
+<script>
+import '@/assets/less/TableExpand.less'
+import { mixinDevice } from '@/utils/mixin'
+import { JeecgListMixin } from '@/mixins/JeecgListMixin'
+export default {
+  name: 'GovList',
+  components: {},
+  mixins: [JeecgListMixin, mixinDevice],
+  data() {
+    return {
+      description: '监管组织',
+      // 表头
+      columns: [
+        {
+          title: '编号',
+          align: 'center',
+          dataIndex: 'code',
+          scopedSlots: { customRender: 'tags' },
+        },
+        {
+          title: '状态',
+          align: 'center',
+          dataIndex: 'name',
+        },
+        {
+          title: '名称',
+          align: 'center',
+          dataIndex: 'name',
+        },
+        {
+          title: '地域',
+          align: 'center',
+          dataIndex: 'contact',
+        },
+        {
+          title: '经纬度',
+          align: 'center',
+          dataIndex: 'areaCode',
+        },
+        {
+          title: '简称',
+          align: 'center',
+          dataIndex: 'createTime',
+        },
+        {
+          title: '创建日期',
+          align: 'center',
+          dataIndex: 'createTime',
+        },
+         {
+          title: '操作',
+          dataIndex: 'action',
+          align: 'center',
+          fixed: 'right',
+          width: 147,
+          scopedSlots: { customRender: 'action' },
+        },
+      ],
+        url: {
+          list: '/Institution/list',
+        },
+    }
+  },
+  created() {},
+  computed: {},
+  methods: {
+   edit(data) {
+
+   }
+  },
+}
+</script>
+<style lang="less" scoped>
+@import '~@assets/less/common.less';
+/deep/.ant-table-thead tr th {
+  background-color: #62a8ed;
+  color: #e0edfa;
+}
+</style>
+

@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.jeecg.modules.psms.statement.mapper.StatementMapper">
+    <select id="getStatementData" resultType="java.util.Map" >
+        SELECT count(1) as num,
+            round((count(1)/10080),4) as ratio,
+            round((count(if(BLD.fan_status = 1, 1, null))/60),0) as fan,
+            round((count(if(BLD.fan_status = 1 and purifier_status = 1, 1, null))/60),0) as purifier,
+            round((count(if(BLD.fan_status = 1 and purifier_status = 1, 1, null))/60)/(count(if(BLD.fan_status = 1, 1, null))/60),4) as fanRatio,
+            round((count(if(BLD.lampblack_data &lt;= 1, 1, null))/60),0) as h1,
+            round((count(if(BLD.lampblack_data &gt;= 1.01 and BLD.lampblack_data &lt;= 2, 1, null))/60),0) as h2,
+            round((count(if(BLD.lampblack_data &gt;= 2.01 and BLD.lampblack_data &lt;= 4, 1, null))/60),0) as h3,
+            round((count(if(BLD.lampblack_data>4, 1, null))/60),0) as h4,
+            round((count(if(BLD.lampblack_data>1, 1, null))/60),0) as h5
+        FROM
+            ${tableLampblack} BLD
+        WHERE 1=1
+            and BLD.create_time between DATE_SUB(now(), interval 7 day) and DATE_SUB(now(), interval 1 day)
+            and BLD.point_mac = #{pointMac}
+        order by BLD.create_time DESC
+    </select>
+
+    <select id="getStatementMonthData" resultType="java.util.Map" >
+        SELECT count(1) as num,
+            round((count(1)/#{numv}),4) as ratio,
+            round((count(if(BLD.fan_status = 1, 1, null))/60),0) as fan,
+            round((count(if(BLD.fan_status = 1 and purifier_status = 1, 1, null))/60),0) as purifier,
+            round((count(if(BLD.fan_status = 1 and purifier_status = 1, 1, null))/60)/(count(if(BLD.fan_status = 1, 1, null))/60),4) as fanRatio,
+            round((count(if(BLD.lampblack_data &lt;= 1, 1, null))/60),0) as h1,
+            round((count(if(BLD.lampblack_data &gt;= 1.01 and BLD.lampblack_data &lt;= 2, 1, null))/60),0) as h2,
+            round((count(if(BLD.lampblack_data &gt;= 2.01 and BLD.lampblack_data &lt;= 4, 1, null))/60),0) as h3,
+            round((count(if(BLD.lampblack_data>4, 1, null))/60),0) as h4,
+            round((count(if(BLD.lampblack_data>1, 1, null))/60),0) as h5
+        FROM
+            ${tableLampblack} BLD
+        WHERE 1=1
+            and BLD.yyyymm = #{format}
+            and BLD.point_mac = #{pointMac}
+        order by BLD.create_time DESC
+    </select>
+
+    <select id="getStatementSeasonData" resultType="java.util.Map" >
+        SELECT count(1) as num,
+            round((count(1)/#{numv}),4) as ratio,
+            round((count(if(BLD.fan_status = 1, 1, null))/60),0) as fan,
+            round((count(if(BLD.fan_status = 1 and purifier_status = 1, 1, null))/60),0) as purifier,
+            round((count(if(BLD.fan_status = 1 and purifier_status = 1, 1, null))/60)/(count(if(BLD.fan_status = 1, 1, null))/60),4) as fanRatio,
+            round((count(if(BLD.lampblack_data &lt;= 1, 1, null))/60),0) as h1,
+            round((count(if(BLD.lampblack_data &gt;= 1.01 and BLD.lampblack_data &lt;= 2, 1, null))/60),0) as h2,
+            round((count(if(BLD.lampblack_data &gt;= 2.01 and BLD.lampblack_data &lt;= 4, 1, null))/60),0) as h3,
+            round((count(if(BLD.lampblack_data>4, 1, null))/60),0) as h4,
+            round((count(if(BLD.lampblack_data>1, 1, null))/60),0) as h5
+        FROM
+            ${tableLampblack} BLD
+        WHERE 1=1
+            and (BLD.yyyymm = #{format1} or BLD.yyyymm = #{format2} or BLD.yyyymm = #{format3})
+            and BLD.point_mac = #{pointMac}
+        order by BLD.create_time DESC
+    </select>
+
+
+    <select id="getStatDataTest" resultType="java.util.Map" >
+        SELECT count(1) as num,
+            round((count(1)/#{numv}),4) as ratio,
+            round((count(if(BLD.fan_status = 1, 1, null))/60),0) as fan,
+            round((count(if(BLD.fan_status = 1 and purifier_status = 1, 1, null))/60),0) as purifier,
+            round((count(if(BLD.fan_status = 1 and purifier_status = 1, 1, null))/60)/(count(if(BLD.fan_status = 1, 1, null))/60),4) as fanRatio,
+            round((count(if(BLD.lampblack_data &lt;= 1, 1, null))/60),0) as h1,
+            round((count(if(BLD.lampblack_data &gt;= 1.01 and BLD.lampblack_data &lt;= 2, 1, null))/60),0) as h2,
+            round((count(if(BLD.lampblack_data &gt;= 2.01 and BLD.lampblack_data &lt;= 4, 1, null))/60),0) as h3,
+            round((count(if(BLD.lampblack_data>4, 1, null))/60),0) as h4,
+            round((count(if(BLD.lampblack_data>1, 1, null))/60),0) as h5
+        FROM
+            ${tableLampblack} BLD
+        WHERE 1=1
+            and ${sql}
+            and BLD.point_mac = #{pointMac}
+        order by BLD.create_time DESC
+    </select>
+</mapper>

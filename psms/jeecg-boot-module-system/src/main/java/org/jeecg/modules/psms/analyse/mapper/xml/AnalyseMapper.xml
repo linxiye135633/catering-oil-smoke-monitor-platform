@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.jeecg.modules.psms.analyse.mapper.AnalyseMapper">
+
+    <select id="units" resultType="java.util.Map" >
+        <!-- 超标单位数 超标 正常 总数
+
+        -->
+        SELECT
+            IFNULL((count(id)-SUM(sub.num=0)),0) AS a1,
+            IFNULL((count(id)-SUM(sub.num=0)),0) AS a2,
+            IFNULL(SUM(sub.num=0),0) AS a3,
+            IFNULL(count(id),0) as a4
+        FROM(
+            SELECT
+                IFNULL(SUM(BLD.lampblack_data > 1 or BLD.matter_data > 5 or BLD.nmhc_data > 10),0) as num,
+                BP.company_id as id
+            FROM ${tableLampblack} BLD
+            RIGHT JOIN base_point BP ON BLD.point_mac = BP.point_mac and BP.fid_region = #{fidRegion}
+            WHERE   1=1
+                <if test="format != null and format != ''">
+                    AND BLD.yyyymm = #{format}
+                </if>
+                <if test="formatDay != null and formatDay != ''">
+                    AND BLD.yyyymmdd = #{formatDay}
+                </if>
+            GROUP BY BP.company_id
+        ) sub
+    </select>
+
+
+    <select id="moreNum" resultType="java.util.Map" >
+        SELECT
+            IFNULL(SUM(sub.num1),0) as a2,
+            IFNULL(SUM(sub.num2),0) as a3,
+            IFNULL(SUM(sub.num3),0) as a4,
+            IFNULL(SUM(sub.num1+sub.num2+sub.num3),0) as a1
+        FROM(
+            SELECT
+                IFNULL(SUM(BLD.lampblack_data > 1),0) as num1,
+                IFNULL(SUM(BLD.matter_data >5),0) as num2,
+                IFNULL(SUM(BLD.nmhc_data > 10),0) as num3,
+                BP.point_mac as id
+            FROM ${tableLampblack} BLD
+            RIGHT JOIN base_point BP ON BLD.point_mac = BP.point_mac and BP.fid_region = #{fidRegion}
+            WHERE   1=1
+            <if test="format != null and format != ''">
+                AND BLD.yyyymm = #{format}
+            </if>
+            <if test="formatDay != null and formatDay != ''">
+                AND BLD.yyyymmdd = #{formatDay}
+            </if>
+            <if test="companyId != null and companyId != ''">
+                AND BP.company_id = #{companyId}
+            </if>
+
+            GROUP BY BP.point_mac
+        ) sub
+    </select>
+
+    <select id="moreNums" resultType="java.util.Map" >
+        SELECT
+            IFNULL(SUM(sub.num1),0) as a1,
+            IFNULL(SUM(sub.num2),0) as a2,
+            IFNULL(SUM(sub.num3),0) as a3
+        FROM(
+        SELECT
+            IFNULL(SUM(BLD.lampblack_data > 1),0) as num1,
+            IFNULL(SUM(BLD.matter_data >5),0) as num2,
+            IFNULL(SUM(BLD.nmhc_data > 10),0) as num3
+        FROM ${tableLampblack} BLD
+        RIGHT JOIN base_point BP ON BLD.point_mac = BP.point_mac and BP.fid_region = #{fidRegion}
+        WHERE   1=1
+            <if test="format != null and format != ''">
+                AND BLD.yyyymm = #{format}
+            </if>
+            <if test="formatDay != null and formatDay != ''">
+                AND BLD.yyyymmdd = #{formatDay}
+            </if>
+            <if test="companyId != null and companyId != ''">
+                AND BP.company_id = #{companyId}
+            </if>
+        ) sub
+    </select>
+
+    <select id="moreNum" resultType="java.util.Map" >
+        SELECT
+            IFNULL(SUM(sub.num1),0) as a2,
+            IFNULL(SUM(sub.num2),0) as a3,
+            IFNULL(SUM(sub.num3),0) as a4,
+            IFNULL(SUM(sub.num1+sub.num2+sub.num3),0) as a1
+        FROM(
+            SELECT
+                IFNULL(SUM(BLD.lampblack_data > 1),0) as num1,
+                IFNULL(SUM(BLD.matter_data >5),0) as num2,
+                IFNULL(SUM(BLD.nmhc_data > 10),0) as num3,
+                BP.point_mac as mac
+            FROM ${tableLampblack} BLD
+            RIGHT JOIN base_point BP ON BLD.point_mac = BP.point_mac and BP.fid_region = #{fidRegion}
+            WHERE   1=1
+                <if test="format != null and format != ''">
+                    AND BLD.yyyymm = #{format}
+                </if>
+                <if test="formatDay != null and formatDay != ''">
+                    AND BLD.yyyymmdd = #{formatDay}
+                </if>
+                <if test="companyId != null and companyId != ''">
+                    AND BP.company_id = #{companyId}
+                </if>
+
+            GROUP BY BP.point_mac
+        ) sub
+    </select>
+
+    <select id="runHourTime" resultType="int" >
+        SELECT  IFNULL(count(sub.t),0) as num
+        FROM (
+            SELECT
+            HOUR(BLD.create_time) as t,
+            BLD.create_time
+            FROM ${tableLampblack} BLD
+            RIGHT JOIN base_point BP ON BLD.point_mac = BP.point_mac
+            and BP.fid_region = #{fidRegion}
+            and BP.company_id = #{companyId}
+            WHERE  1=1
+            AND BLD.yyyymmdd = #{formatDay}
+            GROUP BY t
+        )sub
+
+    </select>
+</mapper>
