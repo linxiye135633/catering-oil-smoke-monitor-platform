@@ -1,0 +1,6 @@
+
+# E组2.0补充（#E-01）
+hs_err_pid*
+logs/
+*.log
+.idea/
