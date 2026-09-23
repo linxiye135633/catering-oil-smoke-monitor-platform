@@ -1,43 +1,52 @@
-####1._util包:存放自定义函数 详细见代码注释
-####2.AvatarList:显示头像群并支持tip，用法参考src\views\Home.vue（如下图）
-![输入图片说明](https://static.oschina.net/uploads/img/201904/12181253_O0Xi.png "在这里输入图片标题")
-####3.chart包:存放各种图表相关的组件,条形图柱形图折线图等等 具体用法参考首页
-####4.countDown包:一个倒计时组件，用法参考home页,简单描述,该组件有3个属性,
-target(时间/毫秒数)必填，
-format(function,该方法接收一个毫秒数的参数,用于格式化显示当前倒计时时间)非必填,
-onEnd倒计时结束触发函数
-![输入图片说明](https://static.oschina.net/uploads/img/201904/12182046_mwqJ.png "在这里输入图片标题")
-####5.dict包：数据字典专用，用法参考文件夹下readme文件
-####6.Ellipsis包：字符串截取组件,可以指定字符串的显示长度,并将全部内容显示到tip中,简单使用参考src\views\system\PermissionList.vue
-####7.jeecg包：该包下自定义了很多列表/表单中用到的组件 参考包下readme文件
-####8.jeecgbiz包：该包下定义了一些业务相关的组件，比如选择用户弹框,根据部门选择用户等等
-####9.layouts+page包：系统页面布局相关组件，比如登陆进去之后页面顶部显示什么，底部显示什么，菜单点击触发多个tab的布局等等 一般情况不需要修改
-####10.menun包：菜单组件，俩个，一个折叠菜单一个正常显示的菜单
-####11.NumberInfo:数字信息显示组件 如下图
-![输入图片说明](https://static.oschina.net/uploads/img/201904/12185858_uvJ5.png "在这里输入图片标题")
-####12.online包：该包下封装了online表单的相关组件,用于展示表单各种控件,验证表单等等,相关用法参考readme
-####13.setting包：该包下封装了首页风格切换等功能如下图
-![输入图片说明](https://static.oschina.net/uploads/img/201904/12190520_jySG.png "在这里输入图片标题")
-####14.table包：一个二次封装的table组件,用于展示列表，参考readme
-####15.tools包：
-Breadcrumb.vue：面包屑二次封装,支持路由跳转
-DetailList.vue：详情展示用法参考src\views\profile\advanced\Advanced.vue(效果如下图)
-![输入图片说明](https://static.oschina.net/uploads/img/201904/12193954_Uar6.png "在这里输入图片标题")
-````
-个人认为该页面代码有两点值得学习：
-1.vue provide/inject的使用
-2.该页面css定义方式,只定义一个顶层class,其余样式都定义在其下,这样只要顶层class不和别的页面冲突,整个页面的样式都是唯一生效的
-````
-FooterToolBar.vue:fixed定位的底部，通过是否定义内部控件的属性slot="extra"决定是左浮动或是右浮动
-HeaderNotice.vue:首页通知(如下图)
-![输入图片说明](https://static.oschina.net/uploads/img/201904/12195340_fPe0.png "在这里输入图片标题")
-HeaderInfo.vue:上下文字布局（如下图）
-![输入图片说明](https://static.oschina.net/uploads/img/201904/12195638_dG5o.png "在这里输入图片标题")
-Logo.vue:首页左上侧的log图
-![输入图片说明](https://static.oschina.net/uploads/img/201904/12200908_ihv3.png "在这里输入图片标题")
-UserMenu.vue:首页右上侧的内容
-![输入图片说明](https://static.oschina.net/uploads/img/201904/12201226_laQK.png "在这里输入图片标题")
-####16.trend包 趋势显示组件（如下图）
-![输入图片说明](https://static.oschina.net/uploads/img/201904/12201600_Wo8K.png "在这里输入图片标题")
-![cron表达式](https://oscimg.oschina.net/oscnet/661f9ac09016395f9f49286143af3241623.jpg)
-![cron控件添加清除按钮](https://oscimg.oschina.net/oscnet/15096e49f2e29bd829e304d56770025d03c.jpg)
+# E组公共组件发布说明（#E-24，供其他组复用=加分项）
+
+> 两组件均**零业务耦合**（仅依赖 ant-design-vue），复制目录即可用。采用后请在组间互评"可借鉴点"注明来源。
+
+## 1. ScreenContainer 大屏等比缩放容器
+
+- 能力：以任意设计基准（默认1920×1080）等比缩放适配任意分辨率/投影，超宽屏留深色底不拉伸；resize 防抖、销毁清理。
+- 用法：
+
+```vue
+<template>
+  <screen-container :design-width="1920" :design-height="1080">
+    <!-- 按1920×1080绝对布局写你的大屏内容 -->
+  </screen-container>
+</template>
+<script>
+import ScreenContainer from '@/components/ScreenContainer'
+export default { components: { ScreenContainer } }
+</script>
+```
+
+- 适用：E组大屏已用；A组预测看板、B组报告预览页等全屏场景可直接复用。
+- 注意：容器内图表请自行 dispose（参考 E组 TrendChart.vue 写法）。
+
+## 2. ChartCard 图表卡片（深色版三态卡）
+
+- 能力：标题（#1890FF 强调条）+ a-spin 加载态 + 空态文案 + 内容插槽，四行接入。
+- 用法：
+
+```vue
+<chart-card title="告警趋势" :loading="loading" :empty="!list.length" empty-text="暂无数据">
+  <trend-chart :data="list" />
+</chart-card>
+```
+
+- 浅色后台页面也可用（卡片底色为深色大屏定制，浅色场景自行覆盖 `.chart-card` 背景即可）。
+
+## 3. screenPoll 统一轮询服务（utils/screenPoll.js）
+
+- 能力：注册制轮询（key去重）、峰谷间隔参数化（默认峰60s/谷300s，MUST≤5min达标）、页面不可见暂停、失败静默待下轮。
+- 适用：任何需要周期拉取的页面（B组知识库刷新、D组工单列表轮询等）。
+
+```js
+import screenPoll from '@/utils/screenPoll'
+const poll = screenPoll.register({ key: 'myPage', url: '/v2/xxx', handler: d => this.data = d })
+poll.start()
+// beforeDestroy: screenPoll.unregister('myPage')
+```
+
+## 4. 环境变量样例（复制到各自 .env.development 按需修改）
+
+见 `frontend/.env.example`。百度地图AK、轮询峰谷值均已配置化——不要复制1.0把AK硬编码进组件的做法。
